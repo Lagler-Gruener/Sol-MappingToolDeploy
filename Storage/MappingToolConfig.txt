@@ -1,0 +1,2 @@
+App,App-Conf-ReqAdditionalTags,true,Additional required Tags for Azure resourcegroups,App-Conf-ReqAdditionalTags,
+App,App-Conf-SubscriptionId,true,Azure SubscriptionID to query for Azure AD rbac roles,App-Conf-SubscriptionId,%SubscriptionID%
