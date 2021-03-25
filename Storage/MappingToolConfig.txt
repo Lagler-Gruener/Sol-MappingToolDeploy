@@ -5,7 +5,7 @@ Conf;Conf-AAD-PermissionWriteback;true;Configuration setting: Azure AD permissio
 Conf;Conf-AD-MainDC;true;Configuration setting: Main On-Prem DC for AD queries;Conf-AD-MainDC;null
 Conf;Conf-AD-OUPatch-OldPerm;true;Configuration setting: AD OUPath for old Permissions;Conf-AD-OUPatch-OldPerm;null
 Conf;Conf-AD-OUPath-AADPerm;true;Configuration setting: AD OUPath for AAD Permissions;Conf-AD-OUPath-AADPerm;null
-Conf;Conf-AD-OUPath-RBACPerm;true;Configuration setting: AD OUPath for ResourceGroup RBAC Permissions;null
+Conf;Conf-AD-OUPath-RBACPerm;true;Configuration setting: AD OUPath for ResourceGroup RBAC Permissions;Conf-AD-OUPath-RBACPerm;null
 Conf;Conf-AD-OldPerm-Prefix;true;Configuration setting: On-PremAD old permission prefix naming standard. Please do not this option blank!;Conf-AD-OldPerm-Prefix;oldperm-mptool-
 Conf;Conf-App-Automation-Account;false;Configuration setting: Application Automation Account;Conf-App-Automation-Account;%AutomationAccount%
 Conf;Conf-App-CL-MonConfig-Msg-Queue;false;Cloud message queue for config monitoring.;Conf-App-CL-MonConfig-Msg-Queue;m-config-cl
