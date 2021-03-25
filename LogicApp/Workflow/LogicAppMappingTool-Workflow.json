@@ -1,0 +1,575 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subscriptionid": {
+            "type": "String"
+        },
+        "automationaccname": {
+            "type": "String"
+        }
+    },
+    "variables": {
+        "automationaccid": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Automation/automationAccounts/',parameters('automationaccname'))]",
+        "automationaccconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azureautomation')]",
+        "queueconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azurequeues')]",
+        "azureloganalyticsdatacollector": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azureloganalyticsdatacollector')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "LogicAppMappingTool-Workflow",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence": {
+                            "recurrence": {
+                                "frequency": "Minute",
+                                "interval": 5
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "Check_Cloud_Queue_length": {
+                            "actions": {
+                                "Check_automation_runbook_status_(TaskNewAADGroup)": {
+                                    "actions": {
+                                        "Send_LogA_success_data_for_RB_(TaskNewAADGroup)": {
+                                            "runAfter": {},
+                                            "type": "ApiConnection",
+                                            "inputs": {
+                                                "body": "{\"Section:\":\"State of runbook TaskNewAADGroup\",\"State:\":\"@{body('Get_status_of_job_(TaskNewAADGroup)')?['properties']?['status']}\",\"StateDetails:\":\"@{body('Get_status_of_job_(TaskNewAADGroup)')?['properties']?['statusDetails']}\"}",
+                                                "headers": {
+                                                    "Log-Type": "AppMappingtool"
+                                                },
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azureloganalyticsdatacollector_1']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "post",
+                                                "path": "/api/logs"
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Get_status_of_job_(TaskNewAADGroup)": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "else": {
+                                        "actions": {
+                                            "Send_LogA_failed_data_for_RB_(TaskNewAADGroup)": {
+                                                "runAfter": {},
+                                                "type": "ApiConnection",
+                                                "inputs": {
+                                                    "body": "{\"Section:\":\"State of runbook TaskNewAADGroup\",\"State:\":\"@{body('Get_status_of_job_(TaskNewAADGroup)')?['properties']?['status']}\",\"StateDetails:\":\"@{body('Get_status_of_job_(TaskNewAADGroup)')?['properties']?['statusDetails']}\"}",
+                                                    "headers": {
+                                                        "Log-Type": "AppMappingtool"
+                                                    },
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azureloganalyticsdatacollector_1']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "path": "/api/logs"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "equals": [
+                                                    "@body('Get_status_of_job_(TaskNewAADGroup)')?['properties']?['status']",
+                                                    "Completed"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                },
+                                "Create_job_new_Azure_AAD_Group": {
+                                    "runAfter": {},
+                                    "limit": {
+                                        "timeout": "PT2M"
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "properties": {
+                                                "parameters": {
+                                                    "AADGroupParameters": null,
+                                                    "DebugScript": false,
+                                                    "Source": "AD"
+                                                }
+                                            }
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "put",
+                                        "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                        "queries": {
+                                            "runbookName": "TaskAADGroup",
+                                            "wait": true,
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                },
+                                "Get_status_of_job_(TaskNewAADGroup)": {
+                                    "runAfter": {
+                                        "Create_job_new_Azure_AAD_Group": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Create_job_new_Azure_AAD_Group'')?[''properties'']?[''jobId''])}')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_messages_from_Cloud_Queue": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "greater": [
+                                            "@length(body('Get_messages_from_Cloud_Queue')?['QueueMessagesList']?['QueueMessage'])",
+                                            0
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Check_On-Prem_Queue_length": {
+                            "actions": {
+                                "Check_automation_runbook_status_(TaskNewADGroup)": {
+                                    "actions": {
+                                        "Send_LogA_success_data_for_RB_(TaskNewADGroup)": {
+                                            "runAfter": {},
+                                            "type": "ApiConnection",
+                                            "inputs": {
+                                                "body": "{\"Section:\":\"State of runbook TaskNewADGroup\",\"State:\":\"@{body('Get_status_of_job_(TaskADGroup)')?['properties']?['status']}\",\"StateDetails:\":\"@{body('Get_status_of_job_(TaskADGroup)')?['properties']?['statusDetails']}\"}",
+                                                "headers": {
+                                                    "Log-Type": "AppMappingtool"
+                                                },
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azureloganalyticsdatacollector_1']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "post",
+                                                "path": "/api/logs"
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Get_status_of_job_(TaskADGroup)": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "else": {
+                                        "actions": {
+                                            "Send_LogA_failed_data_for_RB_(TaskNewADGroup)": {
+                                                "runAfter": {},
+                                                "type": "ApiConnection",
+                                                "inputs": {
+                                                    "body": "{\"Section:\":\"State of runbook TaskNewADGroup\",\"State:\":\"@{body('Get_status_of_job_(TaskADGroup)')?['properties']?['status']}\",\"StateDetails:\":\"@{body('Get_status_of_job_(TaskADGroup)')?['properties']?['statusDetails']}\"}",
+                                                    "headers": {
+                                                        "Log-Type": "AppMappingtool"
+                                                    },
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azureloganalyticsdatacollector_1']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "path": "/api/logs"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "equals": [
+                                                    "",
+                                                    "Completed"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                },
+                                "Create_new_On-Prem_AD_Group": {
+                                    "runAfter": {},
+                                    "limit": {
+                                        "timeout": "PT2M"
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "properties": {
+                                                "parameters": {
+                                                    "DebugScript": false,
+                                                    "Source": "NewADGrp"
+                                                },
+                                                "runOn": "@variables('Variable Hybridworkername')"
+                                            }
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "put",
+                                        "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                        "queries": {
+                                            "runbookName": "TaskADGroup",
+                                            "wait": true,
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                },
+                                "Get_status_of_job_(TaskADGroup)": {
+                                    "runAfter": {
+                                        "Create_new_On-Prem_AD_Group": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Create_new_On-Prem_AD_Group'')?[''properties'']?[''jobId''])}')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_messages_from_On-Prem_Queue": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "greater": [
+                                            "@length(body('Get_messages_from_On-Prem_Queue')?['QueueMessagesList']?['QueueMessage'])",
+                                            0
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Check_Queue_lenght": {
+                            "actions": {
+                                "Create_job_for_Runbook_TaskAADGroup": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "properties": {
+                                                "parameters": {
+                                                    "AADGroupParameters": null,
+                                                    "DebugScript": false,
+                                                    "Source": "RemoveAD"
+                                                }
+                                            }
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "put",
+                                        "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                        "queries": {
+                                            "runbookName": "TaskAADGroup",
+                                            "wait": true,
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                },
+                                "Get_status_of_job_TaskAADGroup": {
+                                    "runAfter": {
+                                        "Create_job_for_Runbook_TaskAADGroup": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Create_job_for_Runbook_TaskAADGroup'')?[''properties'']?[''jobId''])}')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_messages_from_m-config-cl_queue": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "greater": [
+                                            "@length(body('Get_messages_from_m-config-cl_queue')?['QueueMessagesList']?['QueueMessage'])",
+                                            0
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Check_Queue_length": {
+                            "actions": {
+                                "Condition": {
+                                    "actions": {},
+                                    "runAfter": {
+                                        "Get_status_of_job": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "equals": [
+                                                    "@body('Get_status_of_job')?['properties']?['status']",
+                                                    "Completed"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                },
+                                "Create_job_for_Runbook_TaskADGroup": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "properties": {
+                                                "parameters": {
+                                                    "ConfigTableData": null,
+                                                    "DebugScript": false,
+                                                    "Source": "MoveADGrp"
+                                                },
+                                                "runOn": "@variables('Variable Hybridworkername')"
+                                            }
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "put",
+                                        "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                        "queries": {
+                                            "runbookName": "TaskADGroup",
+                                            "wait": true,
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                },
+                                "Get_status_of_job": {
+                                    "runAfter": {
+                                        "Create_job_for_Runbook_TaskADGroup": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Create_job_for_Runbook_TaskADGroup'')?[''properties'']?[''jobId''])}')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2015-10-31"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_messages_from_m-config-op_queue": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "greater": [
+                                            "@length(body('Get_messages_from_m-config-op_queue')?['QueueMessagesList']?['QueueMessage'])",
+                                            0
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Get_messages_from_Cloud_Queue": {
+                            "runAfter": {
+                                "Variable_Hybridworkername": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azurequeues_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/@{encodeURIComponent('p-addgrp-cl')}/messages",
+                                "queries": {
+                                    "visibilitytimeout": "1"
+                                }
+                            }
+                        },
+                        "Get_messages_from_On-Prem_Queue": {
+                            "runAfter": {
+                                "Variable_Hybridworkername": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azurequeues_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/@{encodeURIComponent('p-adgrp-op')}/messages",
+                                "queries": {
+                                    "visibilitytimeout": "1"
+                                }
+                            }
+                        },
+                        "Get_messages_from_m-config-cl_queue": {
+                            "runAfter": {
+                                "Variable_Hybridworkername": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azurequeues_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/@{encodeURIComponent('m-config-cl')}/messages",
+                                "queries": {
+                                    "visibilitytimeout": "1"
+                                }
+                            }
+                        },
+                        "Get_messages_from_m-config-op_queue": {
+                            "runAfter": {
+                                "Variable_Hybridworkername": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azurequeues_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/@{encodeURIComponent('m-config-op')}/messages",
+                                "queries": {
+                                    "visibilitytimeout": "1"
+                                }
+                            }
+                        },
+                        "Variable_Hybridworkername": {
+                            "runAfter": {},
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "Variable Hybridworkername",
+                                        "type": "string",
+                                        "value": "MappingTool"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azureautomation_1": {
+                                "connectionId": "[variables('automationaccconnection')]",
+                                "connectionName": "azureautomation",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azureautomation')]"
+                            },
+                            "azureloganalyticsdatacollector_1": {
+                                "connectionId": "[variables('azureloganalyticsdatacollector')]",
+                                "connectionName": "azureloganalyticsdatacollector",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azureloganalyticsdatacollector')]"
+                            },
+                            "azurequeues_1": {
+                                "connectionId": "[variables('queueconnection')]",
+                                "connectionName": "azurequeues",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azurequeues')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

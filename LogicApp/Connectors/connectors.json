@@ -49,6 +49,20 @@
                     "id": "[concat('/subscriptions/', parameters('subscriptionid') ,'/providers/Microsoft.Web/locations/westeurope/managedApis/azureautomation')]"
                 }
             }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "azureloganalyticsdatacollector",
+            "location": "[resourceGroup().location]",
+            "kind": "V1",
+            "properties": {
+                "displayName": "AppMappingToolLogicApp",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azureloganalyticsdatacollector')]"
+                }
+            }
         }
     ]
 }
