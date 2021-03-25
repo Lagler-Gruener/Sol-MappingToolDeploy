@@ -1,0 +1,323 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subscriptionid": {
+            "type": "String"
+        },
+        "automationaccname": {
+            "type": "String"
+        }
+    },
+    "variables": {
+        "automationaccid": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Automation/automationAccounts/',parameters('automationaccname'))]",
+        "automationaccconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azureautomation')]",
+        "queueconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azurequeues')]",
+        "tableconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azuretables')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "LogicAppMappingTool-Monitor",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence": {
+                            "recurrence": {
+                                "frequency": "Minute",
+                                "interval": 10
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "Check_automation_runbook_status_(MonADGroup)": {
+                            "actions": {},
+                            "runAfter": {
+                                "Get_status_of_job_(MonADGroup)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "equals": [
+                                            "@body('Get_status_of_job_(MonADGroup)')?['properties']?['status']",
+                                            "Completed"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Condition": {
+                            "actions": {
+                                "Check_Cloud_Queue_length": {
+                                    "actions": {
+                                        "Create_job_Task_Group_Membership": {
+                                            "runAfter": {},
+                                            "type": "ApiConnection",
+                                            "inputs": {
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "put",
+                                                "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                                "queries": {
+                                                    "runbookName": "TaskMembership",
+                                                    "wait": false,
+                                                    "x-ms-api-version": "2015-10-31"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Get_messages_from_Membership_Queue": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "greater": [
+                                                    "@length(body('Get_messages_from_Membership_Queue')?['QueueMessagesList']?['QueueMessage'])",
+                                                    0
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                },
+                                "Get_messages_from_Membership_Queue": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azurequeues_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "/@{encodeURIComponent('m-grpmembers-cl')}/messages",
+                                        "queries": {
+                                            "visibilitytimeout": "1"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_status_of_job_(MonMembership)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "equals": [
+                                            "@body('Get_status_of_job_(MonMembership)')?['properties']?['status']",
+                                            "Completed"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Create_job_Monitor_AD_Remove": {
+                            "runAfter": {
+                                "Get_entities": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "parameters": {
+                                            "ConfigTableData": "@body('Get_entities')?['value']",
+                                            "Source": "DelADGroup"
+                                        },
+                                        "runOn": "@variables('HybridWorker')"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                    }
+                                },
+                                "method": "put",
+                                "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                "queries": {
+                                    "runbookName": "TaskADGroup",
+                                    "wait": false,
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        },
+                        "Create_job_Monitor_Group_Membership": {
+                            "runAfter": {
+                                "Get_entities": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "parameters": {
+                                            "ConfigTableData": "@body('Get_entities')?['value']"
+                                        },
+                                        "runOn": "@variables('HybridWorker')"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                    }
+                                },
+                                "method": "put",
+                                "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                "queries": {
+                                    "runbookName": "MonMembership",
+                                    "wait": true,
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        },
+                        "Get_entities": {
+                            "runAfter": {
+                                "Variable_Hybridworkername": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuretables_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/Tables/@{encodeURIComponent('cfrbacperm')}/entities"
+                            }
+                        },
+                        "Get_status_of_job_(MonADGroup)": {
+                            "runAfter": {
+                                "Monitor_On-Prem_AD_for_changes": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Monitor_On-Prem_AD_for_changes'')?[''properties'']?[''jobId''])}')]",
+                                "queries": {
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        },
+                        "Get_status_of_job_(MonMembership)": {
+                            "runAfter": {
+                                "Create_job_Monitor_Group_Membership": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "[concat(variables('automationaccid'), '/jobs/@{encodeURIComponent(body(''Create_job_Monitor_Group_Membership'')?[''properties'']?[''jobId''])}')]",
+                                "queries": {
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        },
+                        "Monitor_On-Prem_AD_for_changes": {
+                            "runAfter": {
+                                "Get_entities": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "runOn": "@variables('HybridWorker')"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation_1']['connectionId']"
+                                    }
+                                },
+                                "method": "put",
+                                "path": "[concat(variables('automationaccid'), '/jobs')]",
+                                "queries": {
+                                    "runbookName": "MonADGroup",
+                                    "wait": true,
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        },
+                        "Variable_Hybridworkername": {
+                            "runAfter": {},
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "HybridWorker",
+                                        "type": "string",
+                                        "value": "MappingTool"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azureautomation_1": {
+                                "connectionId": "[variables('automationaccconnection')]",
+                                "connectionName": "azureautomation",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azureautomation')]"
+                            },
+                            "azurequeues_1": {
+                                "connectionId": "[variables('queueconnection')]",
+                                "connectionName": "azurequeues",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azurequeues')]"
+                            },
+                            "azuretables_1": {
+                                "connectionId": "[variables('tableconnection')]",
+                                "connectionName": "azuretables",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionid'),'/providers/Microsoft.Web/locations/westeurope/managedApis/azuretables')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
