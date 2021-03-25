@@ -1,2 +1,31 @@
-App,App-Conf-ReqAdditionalTags,true,Additional required Tags for Azure resourcegroups,App-Conf-ReqAdditionalTags,null
-App,App-Conf-SubscriptionId,true,Azure SubscriptionID to query for Azure AD rbac roles,App-Conf-SubscriptionId,%SubscriptionID%
+App;App-Conf-ReqAdditionalTags;true;Additional required Tags for Azure resourcegroups;App-Conf-ReqAdditionalTags;null
+App;App-Conf-SubscriptionId;true;Azure SubscriptionID to query for Azure AD rbac roles;App-Conf-SubscriptionId;%SubscriptionID%
+Conf;Conf-AAD-OldPerm-Prefix;true;Configuration setting: Azure AD old permission prefix naming standard. Please do not this option blank!;Conf-AAD-OldPerm-Prefix;oldperm-
+Conf;Conf-AAD-PermissionWriteback;true;Configuration setting: Azure AD permission write back to On-Prem Groups. Default Value is false;Conf-AAD-PermissionWriteback;false
+Conf;Conf-AD-MainDC;true;Configuration setting: Main On-Prem DC for AD queries;Conf-AD-MainDC;null
+Conf;Conf-AD-OUPatch-OldPerm;true;Configuration setting: AD OUPath for old Permissions;Conf-AD-OUPatch-OldPerm;null
+Conf;Conf-AD-OUPath-AADPerm;true;Configuration setting: AD OUPath for AAD Permissions;Conf-AD-OUPath-AADPerm;null
+Conf;Conf-AD-OUPath-RBACPerm;true;Configuration setting: AD OUPath for ResourceGroup RBAC Permissions;null
+Conf;Conf-AD-OldPerm-Prefix;true;Configuration setting: On-PremAD old permission prefix naming standard. Please do not this option blank!;Conf-AD-OldPerm-Prefix;oldperm-mptool-
+Conf;Conf-App-Automation-Account;false;Configuration setting: Application Automation Account;Conf-App-Automation-Account;%AutomationAccount%
+Conf;Conf-App-CL-MonConfig-Msg-Queue;false;Cloud message queue for config monitoring.;Conf-App-CL-MonConfig-Msg-Queue;m-config-cl
+Conf;Conf-App-CL-MonMembership-Msg-Queue;false;Configuration setting: Main message queue for MonGroupMembership  tasks;Conf-App-CL-MonMembership-Msg-Queue;m-grpmembers-cl
+Conf;Conf-App-CL-Process-Msg-Queue;false;Configuration setting: Main message queue for cloud tasks;Conf-App-CL-Process-Msg-Queue;p-addgrp-cl
+Conf;Conf-App-Config-Issues;false;Configuration Setting: Application configuration issues;Conf-App-Config-Issues;cfconfigissue
+Conf;Conf-App-Configuration-Table;false;Configuration setting: Main configuration table for mapping tool application;Conf-App-Configuration-Table;cfrbacperm
+Conf;Conf-App-Configuration-TableBak;false;Configuration setting: Azure archiv table for deleted RBAC configurations;Conf-App-Configuration-TableBak;cfrbacarchiv
+Conf;Conf-App-Loganalytics-WS;false;Configuration setting: Application main Log Analytics workspace for monitoring;Conf-App-Loganalytics-WS;%LogAnalyticsAccount%
+Conf;Conf-App-Mapping-Table;false;Configuration setting: Main mapping table for application. This table includes the RBAC to Permission mapping;Conf-App-Mapping-Table;cfrolemapping
+Conf;Conf-App-OP-MonConfig-Msg-Queue;false;On-Prem message queue for config monitoring.;Conf-App-OP-MonConfig-Msg-Queue;m-config-op
+Conf;Conf-App-OP-Process-Msg-Queue;false;Configuration setting: Main message queue for On-Prem tasks;Conf-App-OP-Process-Msg-Queue;p-adgrp-op
+Conf;Conf-App-RG-MainTag;true;Configuration setting: main resource group tag to get RBAC permission settings;Conf-App-RG-MainTag;SolMappingPerm
+Conf;Conf-App-RG-to-Monitor;false;Configuration setting: Resoucegroup name (start with) to monitor for new permissions;Conf-App-RG-to-Monitor;RG-
+Conf;Conf-App-ResourceGroup;false;Configuration setting: mapping tool resource group;Conf-App-ResourceGroup;RG-Sol-MappingTool
+Conf;Conf-App-StorageAccount;false;Configuration setting: Main storage account for mapping tool application;Conf-App-StorageAccount;%StorageAccount%
+Conf;Conf-App-TimeZone;false;Configuration setting: Timezone formate for logging finformations;Conf-App-TimeZone;W. Europe Standard Time
+NS;NS-AAD-Perm;true;Naming Standard for AAD Permissions. Each AAD Group starts with:;NS-AAD-Perm;AZ-AAD-
+NS;NS-AAD-RBAC-Perm;true;Naming standard setting: Naming standard for Azure AD groups (start with). Mapping between Azure Resource Group RBAC and AzureAD;NS-AAD-RBAC-Perm;AZ-RBAC-
+NS;NS-AAD-WithRole-Perm;true;Naming standard for AAD permission with the option "Azure AD roles can be assigned to the group".;NS-AAD-WithRole-Perm;Az-AAD-Role-
+NS;NS-AD-OnPrem-Perm;true;Naming Standard for AD (On-Prem) Permissions. Each AD Group start with;NS-AD-OnPrem-Perm;OP-AAD-
+NS;NS-AD-OnPrem-RBAC-Perm;true;Naming standard-setting: Naming standard for On-Prem AD groups (start with). The mapping between Azure Resource Group RBAC and On-Prem;NS-AD-OnPrem-RBAC-Perm;OP-RBAC-
+NS;NS-AD-OnPrem-WithRole-Perm;true;Naming standard for AAD permissions with the option "Azure AD roles can be assigned to the group".;NS-AD-OnPrem-WithRole-Perm;OP-AAD-Role-
