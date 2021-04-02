@@ -1,4 +1,4 @@
-App;App-Conf-ReqAdditionalTags;true;Additional required Tags for Azure resourcegroups;App-Conf-ReqAdditionalTags;null
+App;App-Conf-ReqAdditionalTags;true;Additional required Tags for Azure resourcegroups;App-Conf-ReqAdditionalTags;%DefTags%
 App;App-Conf-SubscriptionId;true;Azure SubscriptionID to query for Azure AD rbac roles;App-Conf-SubscriptionId;%SubscriptionID%
 Conf;Conf-AAD-OldPerm-Prefix;true;Configuration setting: Azure AD old permission prefix naming standard. Please do not this option blank!;Conf-AAD-OldPerm-Prefix;oldperm-
 Conf;Conf-AAD-PermissionWriteback;true;Configuration setting: Azure AD permission write back to On-Prem Groups. Default Value is false;Conf-AAD-PermissionWriteback;false
