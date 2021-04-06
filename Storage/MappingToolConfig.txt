@@ -20,7 +20,7 @@ Conf;Conf-App-OP-MonConfig-Msg-Queue;false;On-Prem message queue for config moni
 Conf;Conf-App-OP-Process-Msg-Queue;false;Configuration setting: Main message queue for On-Prem tasks;Conf-App-OP-Process-Msg-Queue;p-adgrp-op
 Conf;Conf-App-RG-MainTag;true;Configuration setting: main resource group tag to get RBAC permission settings;Conf-App-RG-MainTag;SolMappingPerm
 Conf;Conf-App-RG-to-Monitor;false;Configuration setting: Resoucegroup name (start with) to monitor for new permissions;Conf-App-RG-to-Monitor;RG-
-Conf;Conf-App-ResourceGroup;false;Configuration setting: mapping tool resource group;Conf-App-ResourceGroup;RG-Sol-MappingTool
+Conf;Conf-App-ResourceGroup;false;Configuration setting: mapping tool resource group;Conf-App-ResourceGroup;RG-MappingTool
 Conf;Conf-App-StorageAccount;false;Configuration setting: Main storage account for mapping tool application;Conf-App-StorageAccount;%StorageAccount%
 Conf;Conf-App-TimeZone;false;Configuration setting: Timezone formate for logging finformations;Conf-App-TimeZone;W. Europe Standard Time
 NS;NS-AAD-Perm;true;Naming Standard for AAD Permissions. Each AAD Group starts with:;NS-AAD-Perm;AZ-AAD-
