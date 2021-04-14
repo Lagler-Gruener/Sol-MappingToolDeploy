@@ -12,8 +12,8 @@
     "variables": {
         "automationaccid": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Automation/automationAccounts/',parameters('automationaccname'))]",
         "automationaccconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azureautomation')]",
-        "queueconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azurequeues')]",
-        "azureloganalyticsdatacollector": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/azureloganalyticsdatacollector')]"
+        "queueconnection": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azurequeues')]",
+        "azureloganalyticsdatacollector": "[concat('/subscriptions/',parameters('subscriptionid'),'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azureloganalyticsdatacollector')]"
     },
     "resources": [
         {
